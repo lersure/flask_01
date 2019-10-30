@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href={{ url_for('static',filename='css/layui.css') }}  media="all">
+</head>
+<body>
+{#onclick="javascript:window.location.href=''"#}
+<button type="button" class="layui-btn layui-bg-cyan" id="loadData">加载数据</button><br>
+<div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo">
+    <div id="demo1" class="layui-progress-bar layui-bg-cyan" lay-percent="0%"></div>
+</div>
+
+<textarea placeholder="请输入内容" class="layui-textarea" id="info" readonly="readonly"></textarea>
+</body>
+<script src="{{ url_for('static',filename='layui.js') }}" charset="utf-8"></script>
+<script>
+    var DISABLED = 'layui-btn-disabled';
+
+    layui.use(['jquery','element'], function () {
+        var $ = layui.jquery,
+            element=layui.element;
+        $("#loadData").on('click', function (event) {
+            {#var quiz1 = $("#quiz1 option:selected").val(),#}
+            {#    quiz2 = $("#quiz2 option:selected").val(),#}
+            {#    quiz3 = $("#quiz3 option:selected").val();#}
+            if ($(event.target).hasClass(DISABLED))
+                return;
+            n = 0;
+            $(event.target).addClass(DISABLED);
+
+            $.ajax({
+                type: "POST",
+                //url: "/getData?quiz1=" + quiz1 + "&quiz2=" + quiz2 + "&quiz3=" + quiz3,
+                url: "/getData?quiz1=10&quiz2=20&quiz3=1000",
+                dataType: 'json',
+                success: function (data) {
+                    console.log("success data:");
+                    var obj = eval('(' + data + ')');
+                    $("#info").val("参数是：" + obj.arg + "\n参数的个数为：" + obj.nums);
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 80) {
+                            clearInterval(timer);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 50 + Math.random() * 10);
+
+                    {#$("#demo1").attr("lay-percent", "32%");#}
+                    {#element.init();#}
+                },
+                beforeSend: function () {
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 30) {
+                            clearInterval(timer);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 30);
+                },
+                complete: function () {
+                    console.log("complete data:");
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 100) {
+                            n = 100;
+                            clearInterval(timer);
+                            $(event.target).removeClass(DISABLED);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 30);
+                },
+
+
+            });
+        });
+    });
+
+</script>
+</html>

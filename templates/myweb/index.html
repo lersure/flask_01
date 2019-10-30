@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>模型压缩</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href={{ url_for('static',filename='css/layui.css') }}  media="all">
+    <!--引入json可视化工具相关的CSS-->
+    <link rel="stylesheet" href={{ url_for('static',filename='css/jsoneditor.css') }}/>
+    <style>
+        {#body {#}
+        {#    padding: 0 70px;#}
+        {# }#}
+
+        #json {
+            margin: 10px 10px 10px 32px;
+            width: 50%;
+            min-height: 70px;
+            font-family: Times;
+            font-size: 20px;
+        }
+
+
+        #legend {
+            display: inline;
+            margin-left: 30px;
+        }
+
+
+        #legend span {
+            padding: 2px 4px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px black;
+            background-color: black;
+        }
+
+
+        #expander {
+            cursor: pointer;
+            margin-right: 20px;
+        }
+
+        #path {
+            font-weight: bold;
+            font-family: Times;
+            font-size: 20px;
+        }
+
+
+        #rest label {
+            font-weight: bold;
+        }
+
+
+        label[for="json"] {
+            margin-left: 30px;
+            display: block;
+        }
+
+
+    </style>
+
+</head>
+<body>
+
+
+<form class="layui-form" action="" id="addForm" enctype="multipart/form-data" method="post">
+    <!--------------------------选择数据集------------------------>
+    <br><br>
+    <div class="layui-upload">
+        <button type="button" class="layui-btn layui-btn-normal layui-bg-cyan" id="testList1">
+            {% if name=='dataSets' %}选择数据集
+            {% else %}选择模型
+            {% endif %}
+        </button>
+        <div class="layui-upload-list">
+            <table class="layui-table">
+                <thead>
+                <tr>
+                    <th>文件名</th>
+                    <th>大小</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="demoList1"></tbody>
+            </table>
+        </div>
+        <div align="center">
+            <button type="button" class="layui-btn layui-bg-cyan" id="uploadDataSets">
+                {% if name=='dataSets' %}上传数据集
+                {% else %}上传模型
+                {% endif %}</button>
+        </div>
+        <br>
+
+
+    </div>
+
+
+    <pre id="path"></pre>
+    <label for="json"
+           style="font-weight: bold;font-size: 20px;">{% if name=='dataSets' %}数据集配置（json格式）
+    {% else %}模型配置（json格式）
+    {% endif %}:</label>
+    <textarea id="json" name="json" lay-verify="required" lay-reqtext="配置信息是必填项，不能为空！"></textarea><br/>
+    <div id="legend">
+        <span id="expander">Expand all</span>
+    </div>
+    <div id="editor" class="json-editor"></div>
+    <!--隐藏输入框，用作传输上传的路径-->
+    <input type="hidden" name="filepath" id="filepath"/>
+    <!--这是哪一个版块-->
+    <input type="hidden" name="dm" value="{{ name }}"/>
+    <input type="submit" class="layui-btn layui-bg-cyan" id="submitData" value="保存数据"/>
+</form>
+
+<!--弹出层-->
+<div class="site-demo-button" id="layerDemo" style="margin-bottom: 0;">
+    <div data-method="offset" class="poplayer" data-type="auto"></div>
+</div>
+
+</body>
+
+<script src="{{ url_for('static',filename='jquery-3.4.1.min.js') }}" charset="utf-8"></script>
+<script src="{{ url_for('static',filename='layui.js') }}" charset="utf-8"></script>
+<script src="{{ url_for('static',filename='jsoneditor.js') }}" charset="utf-8"></script>
+
+{#    <script src="jquery.min.js"></script>#}
+<script src="{{ url_for('static',filename='jquery.jsoneditor.js') }}" charset="utf-8"></script>
+{#<script src="{{ url_for('static',filename='jquery.jsoneditor.min.js') }}" charset="utf-8"></script>#}
+<script>
+
+
+    layui.use(['jquery', 'element', 'layedit', 'upload', 'layer'], function () {
+        var $ = layui.jquery
+            , upload = layui.upload
+            , element = layui.element
+            , layer = layui.layer;
+        var n = 0;
+        var DISABLED = 'layui-btn-disabled';
+        var filepath = "";
+
+
+        //弹出层
+        //触发事件
+        var active = {
+            offset: function (othis) {
+                var type = othis.data('type');
+                layer.open({
+                    type: 1
+                    , offset: type //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                    , id: 'layerDemo' + type //防止重复弹出
+                    , content: '<div style="padding: 20px 100px;">'+'{{ info }}' + '</div>'
+                    , btn: '关闭'
+                    , btnAlign: 'c' //按钮居中
+                    , shade: 0 //不显示遮罩
+                    , yes: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        };
+        {#console.log("{{ info|safe }}");#}
+        {% if info %}
+            var othis = $("#layerDemo .poplayer"), method = othis.data('method');
+            active[method] ? active[method].call(this, othis) : '';
+        {% endif %}
+
+
+        {#$('#layerDemo .layui-btn').on('click', function () {#}
+        {#    var othis = $(this), method = othis.data('method');#}
+        {#    active[method] ? active[method].call(this, othis) : '';#}
+        {# });#}
+
+        //表单提交
+        $("#submitData").on('click', function (event) {
+            if (filepath == "") {
+                alert("还没有上传文件！");
+                return;
+            }
+            $("#filepath").attr("value", filepath);
+            $("#addForm").attr("action", "/saveConfigs");
+            $("#addForm").submit();
+            console.log("已提交！！！");
+        });
+
+        $("#loadData").on('click', function (event) {
+            {#var quiz1 = $("#quiz1 option:selected").val(),#}
+            {#    quiz2 = $("#quiz2 option:selected").val(),#}
+            {#    quiz3 = $("#quiz3 option:selected").val();#}
+            if ($(event.target).hasClass(DISABLED))
+                return;
+            n = 0;
+            $(event.target).addClass(DISABLED);
+
+            $.ajax({
+                type: "POST",
+                //url: "/getData?quiz1=" + quiz1 + "&quiz2=" + quiz2 + "&quiz3=" + quiz3,
+                url: "/getData?quiz1=10&quiz2=20&quiz3=1000",
+                dataType: 'json',
+                success: function (data) {
+                    console.log("success data:");
+                    var obj = eval('(' + data + ')');
+                    $("#info").val("参数是：" + obj.arg + "\n参数的个数为：" + obj.nums);
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 80) {
+                            clearInterval(timer);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 50 + Math.random() * 10);
+
+                    {#$("#demo1").attr("lay-percent", "32%");#}
+                    {#element.init();#}
+                },
+                beforeSend: function () {
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 30) {
+                            clearInterval(timer);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 30);
+                },
+                complete: function () {
+                    console.log("complete data:");
+                    var timer = setInterval(function () {
+                        n = n + Math.random() * 10 | 0;
+                        if (n > 100) {
+                            n = 100;
+                            clearInterval(timer);
+                            $(event.target).removeClass(DISABLED);
+                        }
+                        element.progress('demo', n + '%');
+                    }, 30);
+                },
+
+
+            });
+        });
+
+        var files = null;
+        var demoListView1 = $('#demoList1')
+            , uploadListIns1 = upload.render({
+            elem: "#testList1"
+            , url: '/upload'
+            , accept: 'file'
+            , multiple: true
+            , auto: false
+            , bindAction: '#uploadDataSets'
+            , choose: function (obj) {
+                files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+                obj.preview(function (index, file, result) {
+                    var tr = $(['<tr id="upload-' + index + '">'
+                        , '<td>' + file.name + '</td>'
+                        , '<td>' + (file.size / 1024).toFixed(1) + 'kb</td>'
+                        , '<td>等待上传</td>'
+                        , '<td>'
+                        , '<button class="layui-btn layui-btn-xs demo-reload layui-hide layui-bg-cyan">重传</button>'
+                        , '<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete layui-bg-cyan">删除</button>'
+                        , '</td>'
+                        , '</tr>'].join(''));
+
+                    //单个重传
+                    tr.find('.demo-reload').on('click', function () {
+                        obj.upload(index, file);
+                    });
+
+                    //删除
+                    tr.find('.demo-delete').on('click', function () {
+                        delete files[index]; //删除对应的文件
+                        tr.remove();
+                        uploadListIns1.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+                    });
+                    demoListView1.append(tr);
+                });
+            }
+            , done: function (res, index, upload) {
+                if (res.code == 0) { //上传成功
+                    var tr = demoListView1.find('tr#upload-' + index)
+                        , tds = tr.children();
+                    tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+                    tds.eq(3).html(''); //清空操作
+                    //console.log(res.filepath);
+                    filepath = res.filepath;
+                    return delete this.files[index]; //删除文件队列已经上传成功的文件
+                }
+                this.error(index, upload);
+            }
+            , error: function (index, upload) {
+                var tr = demoListView1.find('tr#upload-' + index)
+                    , tds = tr.children();
+                tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+                tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+            }
+        });
+
+
+    });
+</script>
+
+
+</html>

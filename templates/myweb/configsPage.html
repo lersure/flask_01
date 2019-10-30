@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href={{ url_for('static',filename='css/layui.css') }}  media="all">
+</head>
+<body>
+{#<table>#}
+{#    {% for d in data %}#}
+{#        <tr>#}
+{#            <td width="80%">{{ d.configs }}</td>#}
+{#            <td>{{ d.path|my_filter }}</td>#}
+{#        </tr>#}
+{#    {% endfor %}#}
+{##}
+{#</table>#}
+<table class="layui-hide" id="test"></table>
+<script type="text/html" id="checkboxTpl">
+    <input type="checkbox" name="lock" value={{ "{{ d.id }}" }} title="选定" lay-filter="lockDemo"
+            {{ "{{ d.id == 10006 ? 'checked' : '' }}" }}>
+</script>
+</body>
+<script src="{{ url_for('static',filename='layui.js') }}" charset="utf-8"></script>
+
+
+<script>
+    layui.use('table', function () {
+        var table = layui.table
+            , form = layui.form;
+
+        table.render({
+            elem: '#test'
+            , url: '{{ url_for('admin.queryData',name='dataSets') }}'
+            , cellMinWidth: 80
+            , cols: [[
+                {type: 'numbers'}
+
+                , {field: 'configs', title: '配置', minWidth: 120, sort: true}
+                , {field: 'path', title: '上传文件', width: 150}
+                , {field: 'lock', title: '是否选定', width: 110, templet: '#checkboxTpl'}
+            ]]
+            , page: true
+        });
+
+
+        //监听锁定操作
+        form.on('checkbox(lockDemo)', function (obj) {
+            layer.tips(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis);
+        });
+    });
+</script>
+</html>
