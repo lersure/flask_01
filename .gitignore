@@ -116,8 +116,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-flask学习笔记
-test.sh
 
 .idea/workspace.xml
 file/
@@ -412,3 +410,5 @@ venv/Lib/site-packages/wtforms/ext/i18n/__pycache__/
 venv/Lib/site-packages/wtforms/ext/sqlalchemy/__pycache__/
 venv/Lib/site-packages/wtforms/fields/__pycache__/
 venv/Lib/site-packages/wtforms/widgets/__pycache__/
+/flask学习笔记
+/test.sh
