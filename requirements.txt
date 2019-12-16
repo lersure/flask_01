@@ -37,7 +37,7 @@ python-editor==1.0.4
 six==1.11.0
 SQLAlchemy==1.2.11
 tensorboard==1.10.0
-tensorflow==1.10.0
+tensorflow==1.15.0
 termcolor==1.1.0
 Werkzeug==0.15.5
 wincertstore==0.2
