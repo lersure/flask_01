@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template,request
 from flask_migrate import MigrateCommand, Migrate
 from flask_script import Manager
 from exts import db
@@ -34,12 +34,28 @@ def hello_world():
 
 @app.route('/addDataSets/<name>', methods=['GET', 'POST'])  # 可以添加
 def addDataSets(name=None):
-    return render_template("myweb/index.html", name=name, info=None)
+    global configItems
+    if name == 'dataSets':
+        configItems = (
+            'nb_smpls_train', 'nb_smpls_eval', 'batch_size', 'batch_size_eval', 'data_type', 'train_ﬁle_format',
+            'eval_ﬁle_format')
+    else:
+        configItems = (
+            'data_node_name', 'label_node_name', 'output_node_name', 'loss_type', 'l2_loss', 'loss_w_dcy', 'nb_epochs'
+                                                                                                           'metric')
+    return render_template("myweb/index.html", name=name, configItems=configItems, info=None)
 
 
 @app.route('/train', methods=['get', 'post'])
 def train():
     return render_template("myweb/train.html")
+
+
+# 数据集/模型配置页面的跳转
+@app.route("/skipDataSets")
+def dataSetsPage():
+    dsOrms = request.args.get("dsOrms")
+    return render_template("myweb/config1.html", dsOrms=dsOrms)
 
 
 # 自定义一个过滤器
@@ -129,7 +145,7 @@ app.register_blueprint(admin)  # app.register_blueprint(admin)#
 #         else:
 #             print("username", username)
 #             return 'success'
-#     return render_template('myweb/login.html')
+#     return render_template('myweb/train_1.html')
 
 # class LoginForm(FlaskForm):
 #     username = StringField(u'用户名', validators=[DataRequired()])

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>模型压缩</title>
+    <link rel="stylesheet" href={{ url_for('static',filename='css/layui.css') }}>
+    <script src="{{ url_for('static',filename='layui.js') }}"></script>
+</head>
+<body>
+
+<div id="test7" class="demo-tree"></div>
+
+</body>
+<script>
+   layui.use(['tree'], function(){
+  var tree = layui.tree
+  //模拟数据2
+  ,data2 = [{
+    title: '早餐'
+    ,id: 1
+    ,children: [{
+      title: '油条'
+      ,id: 5
+    },{
+      title: '包子'
+      ,id: 6
+    },{
+      title: '豆浆'
+      ,id: 7
+    }]
+  },{
+    title: '午餐'
+    ,id: 2
+    ,checked: true
+    ,children: [{
+      title: '藜蒿炒腊肉'
+      ,id: 8
+    },{
+      title: '西湖醋鱼'
+      ,id: 9
+    },{
+      title: '小白菜'
+      ,id: 10
+    },{
+      title: '海带排骨汤'
+      ,id: 11
+    }]
+  },{
+    title: '晚餐'
+    ,id: 3
+    ,children: [{
+      title: '红烧肉'
+      ,id: 12
+      ,fixed: true
+    },{
+      title: '番茄炒蛋'
+      ,id: 13
+    }]
+  },{
+    title: '夜宵'
+    ,id: 4
+    ,children: [{
+      title: '小龙虾'
+      ,id: 14
+    },{
+      title: '香辣蟹'
+      ,id: 15
+      ,disabled: true
+    },{
+      title: '烤鱿鱼'
+      ,id: 16
+    }]
+  }];
+
+  //开启复选框
+  tree.render({
+    elem: '#test7'
+    ,data: data2
+    ,showCheckbox: true
+  });
+
+});
+</script>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+    {#  <script src="js/jquery-3.4.1.min.js" charset="utf-8"></script>#}
+    {#  <script src="js/jquery.min.js"></script>#}
+    {#  <script src="js/layui.all.js" charset="utf-8"></script>#}
+    {#   <script src="js/layui.js"></script>#}
+    <script src="{{ url_for('static',filename='layui.js') }}" charset="utf-8"></script>
+    <script src="{{ url_for('static',filename='layui.all.js') }}" charset="utf-8"></script>
+    <link rel="stylesheet" href={{ url_for('static',filename='css/layui.css') }}  media="all">
+
+    <style>
+        .layui-table-cell {
+            height: inherit;
+        }
+    </style>
+</head>
+<body style="height:100%">
+<table class="layui-table" id="layui_table_id" width="100%" lay-filter="dataTable"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script type="text/html" id="Demo">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="add1">增加</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del1">删除</a>
+</script>
+<script type="text/html" id="switchTpl">
+    <!-- 这里的 checked 的状态只是演示 -->
+    {% raw %}
+    <input type="checkbox" name="chioce" value="{{ d.id }}" lay-skin="switch" lay-text="选择|不选" lay-filter="chioceDemo"
+           {{ d.id== 10003 ? 'checked' : '' }}>
+    {% endraw %}
+</script>
+<div class="site-text" style="margin: 5%; display: none" id="box1" target="test123">
+    <form class="layui-form layui-form-pane" onsubmit="return false" id="booktype">
+        <div class="layui-form-item">
+            <label class="layui-form-label">配置</label>
+            <div class="layui-input-block">
+                <input type="text" class="layui-input  text_add " id="booktypeid" name=booktypeid>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    layui.use(['jquery', 'table', 'layer', 'form'], function () {
+        var table = layui.table,
+            $ = layui.jquery,
+            form = layui.form,
+            layer = layui.layer;
+        var storage = window.localStorage;
+        form.on('switch(chioceDemo)', function (obj) {
+            var data = $(obj.elem);
+            //遍历父级tr，取第一个，然后查找第二个td，取值
+            var id = data.parents('tr').first().find('td').eq(2).text();
+
+            storage.setItem("dataConfig", id);
+        });
+
+        //监听表格复选框选择
+        table.render({
+            id: "dataTable",//
+            elem: '#layui_table_id',//指定表格元素
+            url: '{{ url_for('admin.queryAll',name='dataSets') }}'  //请求路径
+            , dataType: 'json'
+            , cellMinWidth: 20 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            , skin: 'row' //表格风格 line （行边框风格）row （列边框风格）nob （无边框风格）
+            , method: 'get'  //提交方式
+            , parseData(res) {
+
+                let tableData = {
+                    code: 0,
+                    msg: "",
+                    count: 29,
+                    data: []
+                }
+                res.data.forEach(el => {
+                    el.config.forEach(item => {
+                        let temp = {}
+                        temp.ID = el.ID
+                        temp.config = item
+                        tableData.data.push(temp)
+                    })
+                })
+
+                return tableData
+            },
+            cols: [
+                [
+                    {field: 'ID', title: '数据集ID', align: "center", width: 250, sort: false},
+                    {fixed: 'right', title: '数据集操作', width: 180, align: 'center', toolbar: '#Demo'},
+                    {
+                        field: 'config', title: '数据集配置', align: "center", width: 300, sort: false,
+                        templet: function (d) {
+
+                            var data1 = d.config.nb_smpls_train,
+                                data2 = d.config.nb_smpls_eval,
+                                data4 = d.config.batch_size,
+                                data3 = d.config.batch_size_eval,
+                                data5 = d.config.data_type,
+                                data6 = d.config.train_ﬁle_format,
+                                id=d.config.id;
+                                str = '';
+                            if (data1) {
+                                str += '<div>' + "nb_smpls_train:" + data1 + '</div>';
+                            }
+                            if (data2) {
+                                str += '<div>' + "nb_smpls_eval:" + data2 + '</div>';
+                            }
+                            if (data3) {
+                                str += '<div>' + "batch_size:" + data3 + '</div>';
+                            }
+                            if (data4) {
+                                str += '<div>' + "batch_size_eval:" + data4 + '</div>'
+                            }
+                            if (data5) {
+                                str += '<div>' + "data_type:" + data5 + '</div>'
+                            }
+                            if (data6) {
+                                str += '<div>' + "train_ﬁle_format:" + data6 + '</div>'
+                            }
+
+                            return str;
+
+                        }
+                    },
+                    {fixed: 'right', title: '配置操作', width: 180, align: 'center', toolbar: '#barDemo'},
+                    {field: 'chioce', title: '是否选择', width: 120, templet: '#switchTpl', unresize: true}
+
+                ]
+            ],
+            done: function (res, curr, count) {
+                merge(res);
+            }
+        });
+
+        function merge(res) {
+
+            var data = res.data;
+            var mergeIndex = 0;//定位需要添加合并属性的行数
+            var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
+            var columsName = ['ID', ''];//需要合并的列名称
+            var columsIndex = [0, 1];//需要合并的列索引值
+
+            for (var k = 0; k < columsName.length - 1; k++) { //这里循环所有要合并的列
+                var trArr = $(".layui-table-body>.layui-table").find("tr");//所有行
+                for (var i = 1; i < res.data.length; i++) { //这里循环表格当前的数据
+                    var tdCurArr = trArr.eq(i).find("td").eq(columsIndex[k]);//获取当前行的当前列
+                    var tdCurArr2 = trArr.eq(i).find("td").eq(columsIndex[k + 1]);
+                    var tdPreArr = trArr.eq(mergeIndex).find("td").eq(columsIndex[k]);//获取相同列的第一列
+                    var tdPreArr2 = trArr.eq(mergeIndex).find("td").eq(columsIndex[k + 1]);//获取相同列的第一列
+
+
+                    if (data[i][columsName[k]] === data[i - 1][columsName[k]]) { //后一行的值与前一行的值做比较，相同就需要合并
+                        mark += 1;
+                        tdPreArr.each(function () {//相同列的第一列增加rowspan属性
+                            $(this).attr("rowspan", mark);
+                        });
+                        tdPreArr2.each(function () {//相同列的第一列增加rowspan属性
+                            $(this).attr("rowspan", mark);
+                        });
+
+                        tdCurArr.each(function () {//当前行隐藏
+                            $(this).css("display", "none");
+                        });
+                        tdCurArr2.each(function () {//当前行隐藏
+                            $(this).css("display", "none");
+                        });
+                    } else {
+                        mergeIndex = i;
+                        mark = 1;//一旦前后两行的值不一样了，那么需要合并的格子数mark就需要重新计算
+                    }
+                }
+                mergeIndex = 0;
+                mark = 1;
+            }
+        }
+
+        //监听工具条
+
+        table.on('tool(dataTable)', function (obj) {
+            var dataO = obj.data, layEvent = obj.event;
+            var tr = obj.tr//活动当前行tr的DOM对象
+            console.log(dataO.config.id)
+            if (obj.event === 'del1') {
+                layer.confirm('确定删除该配置吗', {
+                    btn: ['确定', '取消']
+                }, function (index) {
+                    $.getJSON(url, {ID: dataO.ID, config: dataO.config},
+                        function (ret) {
+                            layer.close(index);
+                            {#table.reload('testReload', {//重载表格#}
+                            {# })#}
+                        });
+                    layer.close(index);
+                });
+            } else if (obj.event === 'edit') {
+                var id = dataO.ID;
+                var config = dataO.config;
+                location.href = "/addDataSets/{{ dsOrms }}"
+            } else if (obj.event === "add1") {
+                var id = dataO.ID;
+                location.href = "index.html?ID=" + id
+            } else if (obj.event === "del") {
+                layer.confirm('确定删除该数据集吗', {
+                    btn: ['确定', '取消']
+                }, function (index) {
+                    obj.del();
+                    $.getJSON("/del", {id: dataO.config.id,dsOrms:1}, function (data) {
+                        layer.close(index);//关闭弹窗
+                        {#table.reload('testReload', {})#}
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

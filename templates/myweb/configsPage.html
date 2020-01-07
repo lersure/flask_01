@@ -15,7 +15,37 @@
 {#    {% endfor %}#}
 {##}
 {#</table>#}
-<table class="layui-hide" id="test"></table>
+{#<table class="layui-hide" id="test"></table>#}
+
+<table lay-filter="demo">
+    <thead>
+    <tr>
+        <th lay-data="{field:'username', width:100, sort:true}">数据集</th>
+        <th lay-data="{field:'experience'}">配置</th>
+        <th lay-data="{field:'del',width:80}">是否删除</th>
+        <th lay-data="{field:'sign',width:120}">是否选定</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for d in data %}
+        {% for c in d.configs %}
+
+            <tr>
+                <td>{{ d.dataSets_id }}</td>
+                <td>{{ c.config }}</td>
+                <td><a class="layui-btn layui-btn-danger layui-btn-xs" href="/del?id={{ c.id }}&dsOrms={{ d.dsOrms }}">删除</a></td>
+                <td><input type="checkbox" name="lock" value={{ "{{ d.id }}" }} title="选定" lay-filter="lockDemo"
+                        {{ "{{ d.id == 10006 ? 'checked' : '' }}" }}></td>
+
+            </tr>
+
+
+        {% endfor %}
+    {% endfor %}
+    </tbody>
+</table>
+
+
 <script type="text/html" id="checkboxTpl">
     <input type="checkbox" name="lock" value={{ "{{ d.id }}" }} title="选定" lay-filter="lockDemo"
             {{ "{{ d.id == 10006 ? 'checked' : '' }}" }}>
@@ -25,28 +55,12 @@
 
 
 <script>
-    layui.use('table', function () {
-        var table = layui.table
-            , form = layui.form;
+    layui.use(['table', 'layer', 'element'], function () {
+        var table = layui.table;
 
-        table.render({
-            elem: '#test'
-            , url: '{{ url_for('admin.queryData',name='dataSets') }}'
-            , cellMinWidth: 80
-            , cols: [[
-                {type: 'numbers'}
-
-                , {field: 'configs', title: '配置', minWidth: 120, sort: true}
-                , {field: 'path', title: '上传文件', width: 150}
-                , {field: 'lock', title: '是否选定', width: 110, templet: '#checkboxTpl'}
-            ]]
-            , page: true
-        });
-
-
-        //监听锁定操作
-        form.on('checkbox(lockDemo)', function (obj) {
-            layer.tips(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis);
+        table.init('demo', {
+            height: 315 //设置高度
+            , limit: 10
         });
     });
 </script>

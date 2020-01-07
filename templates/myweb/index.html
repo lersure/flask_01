@@ -10,22 +10,16 @@
     <!--引入json可视化工具相关的CSS-->
     <link rel="stylesheet" href={{ url_for('static',filename='css/jsoneditor.css') }}/>
     <style>
-        {#body {#}
-        {#    padding: 0 70px;#}
-        {# }#}
+
 
         #json {
-            margin: 10px 10px 10px 32px;
+            margin-left: 280px;
+            margin-right: auto;
             width: 50%;
-            min-height: 70px;
+            min-height: 100px;
             font-family: Times;
             font-size: 20px;
-        }
 
-
-        #legend {
-            display: inline;
-            margin-left: 30px;
         }
 
 
@@ -40,11 +34,6 @@
             background-color: black;
         }
 
-
-        #expander {
-            cursor: pointer;
-            margin-right: 20px;
-        }
 
         #path {
             font-weight: bold;
@@ -63,16 +52,35 @@
             display: block;
         }
 
+        .layui-input-inline {
+            width: 60%;
+        }
+
+        .layui-inline {
+            margin-left: 50px;
+            display: block;
+        }
+
+        .layui-form-item .layui-input-inline {
+            width: 363px;
+        }
+
+        .layui-btn1 {
+            margin-left: 484px;
+        }
+
+        label.layui-form-label:before {
+            content: '* ';
+            color: red;
+        }
 
     </style>
-
 </head>
 <body>
 
 
 <form class="layui-form" action="" id="addForm" enctype="multipart/form-data" method="post">
     <!--------------------------选择数据集------------------------>
-    <br><br>
     <div class="layui-upload">
         <button type="button" class="layui-btn layui-btn-normal layui-bg-cyan" id="testList1">
             {% if name=='dataSets' %}选择数据集
@@ -99,34 +107,69 @@
                 {% endif %}</button>
         </div>
         <br>
-
-
     </div>
 
+    <!--还未上传文件及配置的表格-->
+    {#    <table lay-filter="demo" class="layui-table" id="table">#}
+    {#        <thead>#}
+    {#        <tr>#}
+    {#            <th lay-data="{field:'file', width:100, sort:true}">#}
+    {#            {% if name=='dataSets' %}dataset_id#}
+    {#            {% else %}model_id#}
+    {#            {% endif %}</th>#}
+    {#            <th lay-data="{field:'configs'}">配置</th>#}
+    {#            <th lay-data="{fixed:'right'}">操作</th>#}
+    {##}
+    {#        </tr>#}
+    {#        </thead>#}
+    {#        <tbody id="configValues">#}
+    {#        </tbody>#}
+    {#    </table>#}
 
+</form>
+{# style="text-align:center" #}
+<form>
     <pre id="path"></pre>
     <label for="json"
-           style="font-weight: bold;font-size: 20px;">{% if name=='dataSets' %}数据集配置（json格式）
-    {% else %}模型配置（json格式）
-    {% endif %}:</label>
+           style="font-weight: bold;font-size: 20px;">{% if name=='dataSets' %}数据集配置
+    {% else %}模型配置
+    {% endif %}</label>
+
     <textarea id="json" name="json" lay-verify="required" lay-reqtext="配置信息是必填项，不能为空！"></textarea><br/>
-    <div id="legend">
-        <span id="expander">Expand all</span>
-    </div>
-    <div id="editor" class="json-editor"></div>
+
+
     <!--隐藏输入框，用作传输上传的路径-->
     <input type="hidden" name="filepath" id="filepath"/>
+
+    {% for item in configItems %}
+        {% if loop.index%2 %}
+            <div class="layui-form-item">
+        {% endif %}
+
+    <div class="layui-inline layui-inline1">
+        <label for="1" class="layui-form-label">{{ item }}</label>
+        <div class="layui-input-inline">
+            <input type="text" name="number" lay-verify="required|number" autocomplete="off"
+                   class="layui-input">
+        </div>
+    </div>
+    {% if loop.index%2==0 %}
+        </div>
+    {% endif %}
+    {% endfor %}
     <!--这是哪一个版块-->
     <input type="hidden" name="dm" value="{{ name }}"/>
+    <input type="button" class="layui-btn layui-bg-cyan" id="addConfig" value="添加配置"/>
     <input type="submit" class="layui-btn layui-bg-cyan" id="submitData" value="保存数据"/>
-</form>
 
+</form>
 <!--弹出层-->
 <div class="site-demo-button" id="layerDemo" style="margin-bottom: 0;">
     <div data-method="offset" class="poplayer" data-type="auto"></div>
 </div>
 
 </body>
+
 
 <script src="{{ url_for('static',filename='jquery-3.4.1.min.js') }}" charset="utf-8"></script>
 <script src="{{ url_for('static',filename='layui.js') }}" charset="utf-8"></script>
@@ -137,113 +180,58 @@
 {#<script src="{{ url_for('static',filename='jquery.jsoneditor.min.js') }}" charset="utf-8"></script>#}
 <script>
 
-
-    layui.use(['jquery', 'element', 'layedit', 'upload', 'layer'], function () {
+    layui.use(['jquery', 'upload', 'layer'], function () {
         var $ = layui.jquery
             , upload = layui.upload
-            , element = layui.element
             , layer = layui.layer;
-        var n = 0;
-        var DISABLED = 'layui-btn-disabled';
         var filepath = "";
+        var info = "";
+        var list = {};
 
 
         //弹出层
         //触发事件
-        var active = {
-            offset: function (othis) {
-                var type = othis.data('type');
-                layer.open({
-                    type: 1
-                    , offset: type //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
-                    , id: 'layerDemo' + type //防止重复弹出
-                    , content: '<div style="padding: 20px 100px;">'+'{{ info }}' + '</div>'
-                    , btn: '关闭'
-                    , btnAlign: 'c' //按钮居中
-                    , shade: 0 //不显示遮罩
-                    , yes: function () {
-                        layer.closeAll();
-                    }
-                });
-            }
-        };
-        {#console.log("{{ info|safe }}");#}
-        {% if info %}
+        function pop(i) {
+            var active = {
+                offset: function (othis) {
+                    var type = othis.data('type');
+                    layer.open({
+                        type: 1
+                        , offset: type //具体配置参考：http://www.layui.com/doc/modules/layer.html#offset
+                        , id: 'layerDemo' + type //防止重复弹出
+                        , content: '<div style="padding: 20px 100px;">' + i + '</div>'
+                        , btn: '关闭'
+                        , btnAlign: 'c' //按钮居中
+                        , shade: 0 //不显示遮罩
+                        , yes: function () {
+                            layer.closeAll();
+                            info = "";
+                        }
+                    });
+                }
+            };
             var othis = $("#layerDemo .poplayer"), method = othis.data('method');
             active[method] ? active[method].call(this, othis) : '';
-        {% endif %}
+        }
 
 
-        {#$('#layerDemo .layui-btn').on('click', function () {#}
-        {#    var othis = $(this), method = othis.data('method');#}
-        {#    active[method] ? active[method].call(this, othis) : '';#}
-        {# });#}
+        //添加配置
+        $("#addConfig").on('click', function () {
+            if(filepath==="") {
+                pop("还没上传文件！");
+            }else{
+
+            }
+        });
+
 
         //表单提交
-        $("#submitData").on('click', function (event) {
-            if (filepath == "") {
-                alert("还没有上传文件！");
-                return;
-            }
+        $("#submitData").on('click', function () {
             $("#filepath").attr("value", filepath);
             $("#addForm").attr("action", "/saveConfigs");
             $("#addForm").submit();
             console.log("已提交！！！");
-        });
-
-        $("#loadData").on('click', function (event) {
-            {#var quiz1 = $("#quiz1 option:selected").val(),#}
-            {#    quiz2 = $("#quiz2 option:selected").val(),#}
-            {#    quiz3 = $("#quiz3 option:selected").val();#}
-            if ($(event.target).hasClass(DISABLED))
-                return;
-            n = 0;
-            $(event.target).addClass(DISABLED);
-
-            $.ajax({
-                type: "POST",
-                //url: "/getData?quiz1=" + quiz1 + "&quiz2=" + quiz2 + "&quiz3=" + quiz3,
-                url: "/getData?quiz1=10&quiz2=20&quiz3=1000",
-                dataType: 'json',
-                success: function (data) {
-                    console.log("success data:");
-                    var obj = eval('(' + data + ')');
-                    $("#info").val("参数是：" + obj.arg + "\n参数的个数为：" + obj.nums);
-                    var timer = setInterval(function () {
-                        n = n + Math.random() * 10 | 0;
-                        if (n > 80) {
-                            clearInterval(timer);
-                        }
-                        element.progress('demo', n + '%');
-                    }, 50 + Math.random() * 10);
-
-                    {#$("#demo1").attr("lay-percent", "32%");#}
-                    {#element.init();#}
-                },
-                beforeSend: function () {
-                    var timer = setInterval(function () {
-                        n = n + Math.random() * 10 | 0;
-                        if (n > 30) {
-                            clearInterval(timer);
-                        }
-                        element.progress('demo', n + '%');
-                    }, 30);
-                },
-                complete: function () {
-                    console.log("complete data:");
-                    var timer = setInterval(function () {
-                        n = n + Math.random() * 10 | 0;
-                        if (n > 100) {
-                            n = 100;
-                            clearInterval(timer);
-                            $(event.target).removeClass(DISABLED);
-                        }
-                        element.progress('demo', n + '%');
-                    }, 30);
-                },
-
-
-            });
+            pop({{ info }});
         });
 
         var files = null;
@@ -288,8 +276,7 @@
                         , tds = tr.children();
                     tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
                     tds.eq(3).html(''); //清空操作
-                    //console.log(res.filepath);
-                    filepath = res.filepath;
+                    filepath = res.filename.substring(res.filename.lastIndexOf('/') + 1);
                     return delete this.files[index]; //删除文件队列已经上传成功的文件
                 }
                 this.error(index, upload);
@@ -301,8 +288,13 @@
                 tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
             }
         });
-
-
+        //多规则验证
+        $(".layui-input").bind('change propertychange', function () {
+            var config_name = $(this).parent().parent().children()[0].firstChild.textContent;
+            var config_value = $(this).val();
+            list[config_name] = config_value;
+            $('textarea').val(JSON.stringify(list));
+        });
     });
 </script>
 
